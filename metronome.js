@@ -161,9 +161,9 @@ function updateUI() {
   // Update hint based on state
   if (hintEl) {
     if (state.isRunning) {
-      hintEl.textContent = "T=tap tempo | R=random mute | H=half | D=double | SPACE=stop";
+      hintEl.textContent = "Use buttons below or: T=tap tempo | R=random mute | H=half | D=double | SPACE=stop";
     } else {
-      hintEl.textContent = "SPACE = start";
+      hintEl.textContent = "Use START button below or press SPACE";
     }
   }
 }
@@ -234,6 +234,72 @@ if (randomInput) {
     applyRandomMuting();
   });
 }
+
+// Mobile Touch Controls
+const startStopBtn = document.getElementById('start-stop-btn');
+const halfBtn = document.getElementById('half-btn');
+const tapBtn = document.getElementById('tap-btn');
+const doubleBtn = document.getElementById('double-btn');
+const muteBtn = document.getElementById('mute-btn');
+
+// Add mobile button event listeners
+if (startStopBtn) {
+  startStopBtn.addEventListener('click', () => {
+    if (state.isRunning) {
+      stop();
+    } else {
+      start();
+    }
+  });
+}
+
+if (halfBtn) {
+  halfBtn.addEventListener('click', () => {
+    if (state.isRunning) {
+      state.bpm = Math.max(1, Math.round(state.bpm / 2));
+      updateUI();
+    }
+  });
+}
+
+if (tapBtn) {
+  tapBtn.addEventListener('click', () => {
+    if (state.isRunning) {
+      handleTapTempo();
+    }
+  });
+}
+
+if (doubleBtn) {
+  doubleBtn.addEventListener('click', () => {
+    if (state.isRunning) {
+      state.bpm = Math.min(300, Math.round(state.bpm * 2));
+      updateUI();
+    }
+  });
+}
+
+if (muteBtn) {
+  muteBtn.addEventListener('click', () => {
+    if (state.isRunning) {
+      handleRandomMuting();
+    }
+  });
+}
+
+// Update mobile button text based on state
+function updateMobileButtons() {
+  if (startStopBtn) {
+    startStopBtn.textContent = state.isRunning ? 'STOP' : 'START';
+  }
+}
+
+// Modify updateUI to also update mobile buttons
+const originalUpdateUI = updateUI;
+updateUI = function() {
+  originalUpdateUI();
+  updateMobileButtons();
+};
 
 // Utility functions for testing
 function calculateBpmFromInterval(intervalMs) {

@@ -7,6 +7,6 @@ module.exports = {
   ],
   setupFilesAfterEnv: ['<rootDir>/tests/setup.js'],
   moduleNameMapper: {
-    '^@/(.*)$': '<rootDir>/public/$1'
+    '^@/(.*)$': '<rootDir>/$1'
   }
 };

@@ -174,12 +174,6 @@ document.addEventListener("keydown", (e) => {
     case 'KeyH':
       if (state.isRunning) {
         state.bpm = Math.max(1, Math.round(state.bpm / 2));
-        // Recalculate next beat timing based on new BPM
-        if (audioContext) {
-          const timeToNextBeat = (60.0 / state.bpm) * 0.5; // Half interval for immediate effect
-          state.nextNoteTime = audioContext.currentTime + Math.min(timeToNextBeat, 0.1);
-          scheduler(); // Force scheduler to run with new timing
-        }
         updateUI();
       }
       break;
@@ -187,12 +181,6 @@ document.addEventListener("keydown", (e) => {
     case 'KeyD':
       if (state.isRunning) {
         state.bpm = Math.min(300, Math.round(state.bpm * 2));
-        // Recalculate next beat timing based on new BPM
-        if (audioContext) {
-          const timeToNextBeat = (60.0 / state.bpm) * 0.5; // Half interval for immediate effect
-          state.nextNoteTime = audioContext.currentTime + Math.min(timeToNextBeat, 0.1);
-          scheduler(); // Force scheduler to run with new timing
-        }
         updateUI();
       }
       break;

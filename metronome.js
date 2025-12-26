@@ -15,6 +15,13 @@ const state = {
 let audioContext = null;
 let audioInitialized = false;
 
+// DOM Elements
+const bpmEl = typeof document !== 'undefined' ? document.getElementById("tempo-display") : null;
+const statusEl = typeof document !== 'undefined' ? document.getElementById("status-display") : null;
+const muteEl = typeof document !== 'undefined' ? document.getElementById("mute") : null;
+const hintEl = typeof document !== 'undefined' ? document.getElementById("hint") : null;
+const randomInput = typeof document !== 'undefined' ? document.getElementById("random-input") : null;
+
 // Initialize Audio Context (called on page load)
 function initAudio() {
   try {
@@ -60,7 +67,6 @@ function setupIOSAudioResume() {
       passive: true
     });
   });
-}
 }
 
 // Play a single click sound
@@ -305,18 +311,18 @@ document.addEventListener("keydown", (e) => {
 });
 
 // Handle input field blur (clicking outside)
-if (randomInput) {
+if (typeof randomInput !== 'undefined' && randomInput) {
   randomInput.addEventListener('blur', () => {
     applyRandomMuting();
   });
 }
 
 // Mobile Touch Controls
-const startStopBtn = document.getElementById('start-stop-btn');
-const halfBtn = document.getElementById('half-btn');
-const tapBtn = document.getElementById('tap-btn');
-const doubleBtn = document.getElementById('double-btn');
-const muteBtn = document.getElementById('mute-btn');
+const startStopBtn = typeof document !== 'undefined' ? document.getElementById('start-stop-btn') : null;
+const halfBtn = typeof document !== 'undefined' ? document.getElementById('half-btn') : null;
+const tapBtn = typeof document !== 'undefined' ? document.getElementById('tap-btn') : null;
+const doubleBtn = typeof document !== 'undefined' ? document.getElementById('double-btn') : null;
+const muteBtn = typeof document !== 'undefined' ? document.getElementById('mute-btn') : null;
 
 // Add mobile button event listeners
 if (startStopBtn) {

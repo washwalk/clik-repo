@@ -257,4 +257,4 @@ if (typeof module !== 'undefined' && module.exports) {
     calculateBpmFromInterval,
     Metronome
   };
-}
+}// redeploy trigger

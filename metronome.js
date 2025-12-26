@@ -123,7 +123,7 @@ function handleTapTempo() {
 
 // Handle random muting input
 function handleRandomMuting() {
-  // Show input field
+  // Show input field with current value
   randomInput.style.display = 'block';
   randomInput.value = Math.round(state.randomMuteProbability * 100);
   randomInput.focus();
@@ -144,7 +144,19 @@ function applyRandomMuting() {
 function updateUI() {
   if (bpmEl) bpmEl.textContent = `BPM: ${Math.round(state.bpm)}`;
   if (statusEl) statusEl.textContent = state.isRunning ? "RUNNING" : "STOPPED";
-  if (muteEl) muteEl.textContent = `Random mute: ${Math.round(state.randomMuteProbability * 100)}%`;
+
+  // Update mute display - only show when active
+  if (muteEl) {
+    const mutePercent = Math.round(state.randomMuteProbability * 100);
+    if (mutePercent > 0) {
+      muteEl.textContent = `Random mute: ${mutePercent}%`;
+      muteEl.classList.add('active');
+      muteEl.style.display = 'block';
+    } else {
+      muteEl.classList.remove('active');
+      muteEl.style.display = 'none';
+    }
+  }
 
   // Update hint based on state
   if (hintEl) {

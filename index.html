@@ -38,6 +38,23 @@
         <input type="number" id="random-input" class="random-input" placeholder="%" style="display: none;">
     </div>
 
+    <script>
+        // Basic functionality test
+        console.log('HTML loaded successfully');
+
+        // Test DOM access
+        setTimeout(() => {
+            const bpmEl = document.getElementById('tempo-display');
+            const statusEl = document.getElementById('status-display');
+            console.log('DOM elements found:', !!bpmEl, !!statusEl);
+
+            if (bpmEl && statusEl) {
+                bpmEl.textContent = 'BPM: 40 (LOADED)';
+                statusEl.textContent = 'READY';
+                console.log('Basic DOM manipulation works');
+            }
+        }, 100);
+    </script>
     <script src="metronome.js"></script>
 </body>
 </html>

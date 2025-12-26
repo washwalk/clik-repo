@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Page</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #000; color: #fff; }
+        .test { padding: 10px; margin: 10px; background: #333; border-radius: 5px; }
+        .success { border: 2px solid #0f0; }
+        .error { border: 2px solid #f00; }
+    </style>
+</head>
+<body>
+    <h1>Metronome Test Page</h1>
+    <div id="results"></div>
+
+    <script>
+        const results = document.getElementById('results');
+
+        function addResult(test, success, message) {
+            const div = document.createElement('div');
+            div.className = 'test ' + (success ? 'success' : 'error');
+            div.innerHTML = `<strong>${test}:</strong> ${message}`;
+            results.appendChild(div);
+        }
+
+        // Test 1: Basic page load
+        addResult('Page Load', true, 'HTML loaded successfully');
+
+        // Test 2: JavaScript execution
+        try {
+            const testVar = 'JavaScript works';
+            addResult('JavaScript', true, testVar);
+        } catch (e) {
+            addResult('JavaScript', false, e.message);
+        }
+
+        // Test 3: DOM manipulation
+        try {
+            const testDiv = document.createElement('div');
+            testDiv.textContent = 'DOM manipulation works';
+            document.body.appendChild(testDiv);
+            addResult('DOM Manipulation', true, 'Elements can be created and modified');
+        } catch (e) {
+            addResult('DOM Manipulation', false, e.message);
+        }
+
+        // Test 4: Audio API availability
+        try {
+            const audioTest = !!(window.AudioContext || window.webkitAudioContext);
+            addResult('Audio API', audioTest, audioTest ? 'Web Audio API available' : 'Web Audio API not available');
+        } catch (e) {
+            addResult('Audio API', false, e.message);
+        }
+
+        // Test 5: Console logging
+        console.log('Test page console log - if you see this in dev tools, console works');
+        addResult('Console', true, 'Check browser dev tools console for test message');
+
+        // Test 6: Network/domain
+        addResult('Domain', true, `Loaded from: ${window.location.href}`);
+
+        // Test 7: Local storage (if needed later)
+        try {
+            localStorage.setItem('test', 'value');
+            const retrieved = localStorage.getItem('test');
+            addResult('Local Storage', retrieved === 'value', 'Browser storage works');
+        } catch (e) {
+            addResult('Local Storage', false, 'Local storage not available or blocked');
+        }
+    </script>
+</body>
+</html>

@@ -1,4 +1,4 @@
-/* Metronome Styles */
+/* Metronome Styles - Dark Mode Only */
 * {
     margin: 0;
     padding: 0;
@@ -7,8 +7,8 @@
 
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background-color: #f5f5f5;
-    color: #333;
+    background-color: #000000;
+    color: #ffffff;
     min-height: 100vh;
     display: flex;
     align-items: center;
@@ -16,13 +16,14 @@ body {
 }
 
 .metronome {
-    background-color: white;
+    background-color: #1a1a1a;
     border-radius: 12px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
     padding: 2rem;
     max-width: 400px;
     width: 100%;
     text-align: center;
+    border: 1px solid #333333;
 }
 
 .metronome__display {
@@ -32,18 +33,19 @@ body {
 .tempo-display {
     font-size: 3rem;
     font-weight: bold;
-    color: #2c3e50;
+    color: #ffffff;
     margin-bottom: 0.5rem;
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
 }
 
 .status-display {
     font-size: 1.2rem;
-    color: #7f8c8d;
+    color: #cccccc;
     font-weight: 500;
 }
 
 .metronome__controls {
-    border-top: 1px solid #ecf0f1;
+    border-top: 1px solid #333333;
     padding-top: 1.5rem;
 }
 
@@ -52,27 +54,32 @@ body {
     grid-template-columns: 1fr;
     gap: 0.5rem;
     font-size: 0.9rem;
-    color: #34495e;
+    color: #bbbbbb;
 }
 
 .hint {
-    background-color: #ecf0f1;
+    background-color: #2a2a2a;
     padding: 0.5rem;
     border-radius: 6px;
     font-family: 'Monaco', 'Menlo', monospace;
+    border: 1px solid #444444;
+    color: #dddddd;
 }
 
-/* Active state styling */
+/* Active state styling - Dark Mode */
 .metronome--running {
-    box-shadow: 0 6px 30px rgba(52, 152, 219, 0.3);
+    box-shadow: 0 6px 30px rgba(0, 123, 255, 0.3);
+    border-color: #007bff;
 }
 
 .metronome--running .status-display {
-    color: #27ae60;
+    color: #00ff00;
+    text-shadow: 0 0 5px rgba(0, 255, 0, 0.5);
 }
 
 .metronome--running .tempo-display {
-    color: #3498db;
+    color: #00aaff;
+    text-shadow: 0 0 10px rgba(0, 170, 255, 0.5);
 }
 
 /* Responsive design */

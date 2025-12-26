@@ -1,0 +1,88 @@
+/* Metronome Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: #f5f5f5;
+    color: #333;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.metronome {
+    background-color: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    padding: 2rem;
+    max-width: 400px;
+    width: 100%;
+    text-align: center;
+}
+
+.metronome__display {
+    margin-bottom: 2rem;
+}
+
+.tempo-display {
+    font-size: 3rem;
+    font-weight: bold;
+    color: #2c3e50;
+    margin-bottom: 0.5rem;
+}
+
+.status-display {
+    font-size: 1.2rem;
+    color: #7f8c8d;
+    font-weight: 500;
+}
+
+.metronome__controls {
+    border-top: 1px solid #ecf0f1;
+    padding-top: 1.5rem;
+}
+
+.control-hints {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    color: #34495e;
+}
+
+.hint {
+    background-color: #ecf0f1;
+    padding: 0.5rem;
+    border-radius: 6px;
+    font-family: 'Monaco', 'Menlo', monospace;
+}
+
+/* Active state styling */
+.metronome--running {
+    box-shadow: 0 6px 30px rgba(52, 152, 219, 0.3);
+}
+
+.metronome--running .status-display {
+    color: #27ae60;
+}
+
+.metronome--running .tempo-display {
+    color: #3498db;
+}
+
+/* Responsive design */
+@media (max-width: 480px) {
+    .metronome {
+        margin: 1rem;
+        padding: 1.5rem;
+    }
+
+    .tempo-display {
+        font-size: 2.5rem;
+    }
+}

@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Metronome - Keyboard-Driven Tempo Tool</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="metronome">
+        <div class="metronome__display">
+            <div class="tempo-display" id="tempo-display">40 BPM</div>
+            <div class="status-display" id="status-display">Stopped</div>
+        </div>
+
+        <div class="metronome__controls">
+            <div class="control-hints">
+                <div class="hint">Space: Start/Stop</div>
+                <div class="hint">T (x2): Tap Tempo</div>
+                <div class="hint">R + #: Random Mute %</div>
+                <div class="hint">H: Half Tempo</div>
+                <div class="hint">D: Double Tempo</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="metronome.js"></script>
+</body>
+</html>

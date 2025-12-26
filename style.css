@@ -44,6 +44,16 @@ body {
     font-weight: 500;
 }
 
+.status-display.audio-disabled {
+    color: #ff6b6b;
+    animation: blink 1s infinite;
+}
+
+@keyframes blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0.5; }
+}
+
 .mute-display {
     font-size: 0.9rem;
     color: #999999;

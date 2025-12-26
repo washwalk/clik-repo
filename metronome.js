@@ -13,49 +13,89 @@ const state = {
 
 // Audio Context
 let audioContext = null;
+let audioInitialized = false;
 
-// DOM Elements
-const bpmEl = document.getElementById("tempo-display");
-const statusEl = document.getElementById("status-display");
-const muteEl = document.getElementById("mute");
-const hintEl = document.getElementById("hint");
-const randomInput = document.getElementById("random-input");
-
-// Initialize Audio Context
+// Initialize Audio Context (called on page load)
 function initAudio() {
   try {
     audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+    // Handle iOS audio context state
+    if (audioContext.state === 'suspended') {
+      // iOS requires user interaction to resume
+      setupIOSAudioResume();
+    } else {
+      audioInitialized = true;
+    }
+
+    console.log('Audio context initialized, state:', audioContext.state);
   } catch (e) {
     console.error('Web Audio API not supported');
   }
 }
 
+// Setup iOS-specific audio resume handling
+function setupIOSAudioResume() {
+  const resumeAudio = async () => {
+    if (audioContext && audioContext.state === 'suspended') {
+      try {
+        await audioContext.resume();
+        audioInitialized = true;
+        console.log('Audio context resumed on iOS');
+
+        // Update UI to show audio is ready
+        updateUI();
+      } catch (error) {
+        console.error('Failed to resume audio context:', error);
+      }
+    }
+  };
+
+  // Add resume listeners to all user interaction events
+  const events = ['touchstart', 'touchend', 'click', 'keydown'];
+
+  events.forEach(event => {
+    document.addEventListener(event, resumeAudio, {
+      once: true, // Only trigger once
+      passive: true
+    });
+  });
+}
+}
+
 // Play a single click sound
 function playClick(time) {
-  if (!audioContext) return;
+  // Check if audio is ready (initialized and not suspended)
+  if (!audioContext || !audioInitialized || audioContext.state !== 'running') {
+    return;
+  }
 
   // Skip if random muting is active
   if (state.randomMuteProbability > 0 && Math.random() < state.randomMuteProbability) {
     return;
   }
 
-  const oscillator = audioContext.createOscillator();
-  const gainNode = audioContext.createGain();
+  try {
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
 
-  oscillator.connect(gainNode);
-  gainNode.connect(audioContext.destination);
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
 
-  // Click sound: high frequency square wave
-  oscillator.frequency.setValueAtTime(1000, time);
-  oscillator.type = 'square';
+    // Click sound: high frequency square wave
+    oscillator.frequency.setValueAtTime(1000, time);
+    oscillator.type = 'square';
 
-  // Quick envelope for click sound
-  gainNode.gain.setValueAtTime(0, time);
-  gainNode.gain.linearRampToValueAtTime(0.3, time + 0.001); // Quick attack
-  gainNode.gain.exponentialRampToValueAtTime(0.001, time + 0.05); // Quick decay
+    // Quick envelope for click sound
+    gainNode.gain.setValueAtTime(0, time);
+    gainNode.gain.linearRampToValueAtTime(0.3, time + 0.001); // Quick attack
+    gainNode.gain.exponentialRampToValueAtTime(0.001, time + 0.05); // Quick decay
 
-  oscillator.start(time);
-  oscillator.stop(time + 0.05);
+    oscillator.start(time);
+    oscillator.stop(time + 0.05);
+  } catch (error) {
+    console.error('Error playing audio:', error);
+  }
 }
 
 // Scheduler function
@@ -77,10 +117,31 @@ function timerLoop() {
 function start() {
   if (state.isRunning) return;
 
-  if (!audioContext) initAudio();
+  // Initialize audio if not already done
+  if (!audioContext) {
+    initAudio();
+  }
 
+  // Try to resume audio context if suspended (iOS)
+  if (audioContext && audioContext.state === 'suspended') {
+    audioContext.resume().then(() => {
+      audioInitialized = true;
+      console.log('Audio context resumed when starting metronome');
+      startMetronome();
+    }).catch(error => {
+      console.error('Failed to resume audio context:', error);
+      startMetronome(); // Start anyway, audio might work on next interaction
+    });
+  } else {
+    startMetronome();
+  }
+}
+
+function startMetronome() {
   state.isRunning = true;
-  state.nextNoteTime = audioContext.currentTime + 0.05; // Start in 50ms
+  if (audioContext) {
+    state.nextNoteTime = audioContext.currentTime + 0.05; // Start in 50ms
+  }
 
   // Start the timer loop
   state.intervalId = setInterval(timerLoop, state.lookahead);
@@ -143,7 +204,20 @@ function applyRandomMuting() {
 // Update UI
 function updateUI() {
   if (bpmEl) bpmEl.textContent = `BPM: ${Math.round(state.bpm)}`;
-  if (statusEl) statusEl.textContent = state.isRunning ? "RUNNING" : "STOPPED";
+  if (statusEl) {
+    if (state.isRunning) {
+      if (audioInitialized && audioContext && audioContext.state === 'running') {
+        statusEl.textContent = "RUNNING";
+        statusEl.classList.remove('audio-disabled');
+      } else {
+        statusEl.textContent = "RUNNING (NO AUDIO - TAP TO ENABLE)";
+        statusEl.classList.add('audio-disabled');
+      }
+    } else {
+      statusEl.textContent = "STOPPED";
+      statusEl.classList.remove('audio-disabled');
+    }
+  }
 
   // Update mute display - only show when active
   if (muteEl) {
@@ -158,9 +232,11 @@ function updateUI() {
     }
   }
 
-  // Update hint based on state
+  // Update hint based on state and audio status
   if (hintEl) {
-    if (state.isRunning) {
+    if (!audioInitialized || (audioContext && audioContext.state === 'suspended')) {
+      hintEl.textContent = "TAP ANYWHERE TO ENABLE AUDIO";
+    } else if (state.isRunning) {
       hintEl.textContent = "Use buttons below or: T=tap tempo | R=random mute | H=half | D=double | SPACE=stop";
     } else {
       hintEl.textContent = "Use START button below or press SPACE";
@@ -306,7 +382,10 @@ function calculateBpmFromInterval(intervalMs) {
   return Math.round(60000 / intervalMs);
 }
 
-// Initialize
+// Initialize audio on page load
+initAudio();
+
+// Initialize UI
 updateUI();
 
 // Mock Metronome class for testing compatibility

@@ -22,57 +22,112 @@ const muteEl = typeof document !== 'undefined' ? document.getElementById("mute")
 const hintEl = typeof document !== 'undefined' ? document.getElementById("hint") : null;
 const randomInput = typeof document !== 'undefined' ? document.getElementById("random-input") : null;
 
+// Detect iOS devices
+function isIOS() {
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+         (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+}
+
 // Initialize Audio Context (called on page load)
 function initAudio() {
   try {
-    audioContext = new (window.AudioContext || window.webkitAudioContext)();
-
-    // Handle iOS audio context state
-    if (audioContext.state === 'suspended') {
-      // iOS requires user interaction to resume
-      setupIOSAudioResume();
+    // For iOS, we'll create the audio context inside user gesture events
+    if (isIOS()) {
+      console.log('iOS detected - setting up audio context creation on user gesture');
+      setupIOSAudioCreation();
     } else {
+      // For non-iOS devices, create immediately
+      audioContext = new (window.AudioContext || window.webkitAudioContext)();
       audioInitialized = true;
+      console.log('Audio context initialized for non-iOS device, state:', audioContext.state);
     }
-
-    console.log('Audio context initialized, state:', audioContext.state);
   } catch (e) {
-    console.error('Web Audio API not supported');
+    console.error('Web Audio API not supported:', e);
   }
 }
 
-// Setup iOS-specific audio resume handling
-function setupIOSAudioResume() {
-  const resumeAudio = async () => {
-    if (audioContext && audioContext.state === 'suspended') {
+// Setup iOS-specific audio context creation inside user gestures
+function setupIOSAudioCreation() {
+  const createAudioContext = async () => {
+    if (!audioContext) {
       try {
-        await audioContext.resume();
-        audioInitialized = true;
-        console.log('Audio context resumed on iOS');
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
-        // Update UI to show audio is ready
-        updateUI();
+        // iOS often starts in 'suspended' state, try to resume immediately
+        if (audioContext.state === 'suspended') {
+          await audioContext.resume();
+        }
+
+        console.log('Audio context created and resumed on iOS, state:', audioContext.state);
+
+        // Play a test sound and mark as ready
+        playTestSound();
+        onIOSAudioReady();
       } catch (error) {
-        console.error('Failed to resume audio context:', error);
+        console.error('Failed to create/resume audio context on iOS:', error);
       }
     }
   };
 
-  // Add resume listeners to all user interaction events
+  // Add creation listeners to user interaction events
   const events = ['touchstart', 'touchend', 'click', 'keydown'];
 
   events.forEach(event => {
-    document.addEventListener(event, resumeAudio, {
+    document.addEventListener(event, createAudioContext, {
       once: true, // Only trigger once
       passive: true
     });
   });
 }
 
+// Play a test sound to verify audio works
+function playTestSound() {
+  if (!audioContext || !audioInitialized || audioContext.state !== 'running') {
+    return;
+  }
+
+  try {
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+
+    oscillator.frequency.setValueAtTime(440, audioContext.currentTime); // A4 note
+    oscillator.type = 'sine';
+
+    gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+    gainNode.gain.linearRampToValueAtTime(0.1, audioContext.currentTime + 0.01);
+    gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.1);
+
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 0.1);
+
+    console.log('Test sound played successfully');
+  } catch (error) {
+    console.error('Failed to play test sound:', error);
+  }
+}
+
+// Handle iOS audio context creation completion
+function onIOSAudioReady() {
+  audioInitialized = true;
+  console.log('iOS audio fully ready');
+
+  // If metronome was supposed to be running but couldn't start due to audio, start it now
+  if (state.isRunning && !state.intervalId) {
+    console.log('Starting metronome that was waiting for iOS audio');
+    startMetronome();
+  }
+
+  updateUI();
+}
+
 // Play a single click sound
 function playClick(time) {
   // Check if audio is ready (initialized and not suspended)
   if (!audioContext || !audioInitialized || audioContext.state !== 'running') {
+    console.log('Audio not ready - context:', !!audioContext, 'initialized:', audioInitialized, 'state:', audioContext?.state);
     return;
   }
 
@@ -88,17 +143,26 @@ function playClick(time) {
     oscillator.connect(gainNode);
     gainNode.connect(audioContext.destination);
 
-    // Click sound: high frequency square wave
-    oscillator.frequency.setValueAtTime(1000, time);
-    oscillator.type = 'square';
+    // iOS-friendly click sound: lower frequency, sine wave for better compatibility
+    const frequency = isIOS() ? 800 : 1000; // Lower frequency for iOS
+    const waveType = isIOS() ? 'sine' : 'square'; // Sine wave works better on iOS
 
-    // Quick envelope for click sound
+    oscillator.frequency.setValueAtTime(frequency, time);
+    oscillator.type = waveType;
+
+    // Quick envelope for click sound - slightly longer for iOS
+    const attackTime = isIOS() ? 0.005 : 0.001;
+    const decayTime = isIOS() ? 0.08 : 0.05;
+    const gainLevel = isIOS() ? 0.2 : 0.3; // Lower gain for iOS
+
     gainNode.gain.setValueAtTime(0, time);
-    gainNode.gain.linearRampToValueAtTime(0.3, time + 0.001); // Quick attack
-    gainNode.gain.exponentialRampToValueAtTime(0.001, time + 0.05); // Quick decay
+    gainNode.gain.linearRampToValueAtTime(gainLevel, time + attackTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.001, time + decayTime);
 
     oscillator.start(time);
-    oscillator.stop(time + 0.05);
+    oscillator.stop(time + decayTime);
+
+    console.log('Click played at time:', time, 'frequency:', frequency);
   } catch (error) {
     console.error('Error playing audio:', error);
   }
@@ -123,12 +187,14 @@ function timerLoop() {
 function start() {
   if (state.isRunning) return;
 
-  // Initialize audio if not already done
-  if (!audioContext) {
-    initAudio();
+  // For iOS, if audio context doesn't exist yet, trigger creation
+  if (isIOS() && !audioContext) {
+    console.log('iOS: Audio context not ready yet, metronome will start after user interaction');
+    // Don't start metronome yet - wait for audio context creation
+    return;
   }
 
-  // Try to resume audio context if suspended (iOS)
+  // Try to resume audio context if suspended
   if (audioContext && audioContext.state === 'suspended') {
     audioContext.resume().then(() => {
       audioInitialized = true;
@@ -240,7 +306,9 @@ function updateUI() {
 
   // Update hint based on state and audio status
   if (hintEl) {
-    if (!audioInitialized || (audioContext && audioContext.state === 'suspended')) {
+    if (isIOS() && (!audioContext || !audioInitialized)) {
+      hintEl.textContent = "TAP START TO ENABLE AUDIO ON iOS";
+    } else if (!audioInitialized || (audioContext && audioContext.state === 'suspended')) {
       hintEl.textContent = "TAP ANYWHERE TO ENABLE AUDIO";
     } else if (state.isRunning) {
       hintEl.textContent = "Use buttons below or: T=tap tempo | R=random mute | H=half | D=double | SPACE=stop";
@@ -248,6 +316,9 @@ function updateUI() {
       hintEl.textContent = "Use START button below or press SPACE";
     }
   }
+
+  // Update mobile buttons
+  updateMobileButtons();
 }
 
 // Keyboard event handler
@@ -275,6 +346,13 @@ document.addEventListener("keydown", (e) => {
 
   switch (e.code) {
     case 'Space':
+      if (isIOS() && !audioContext) {
+        // On iOS, space key before audio is enabled should create audio context
+        initAudio();
+        console.log('iOS: Audio initialization triggered by space key');
+        return;
+      }
+
       if (state.isRunning) {
         stop();
       } else {
@@ -327,6 +405,14 @@ const muteBtn = typeof document !== 'undefined' ? document.getElementById('mute-
 // Add mobile button event listeners
 if (startStopBtn) {
   startStopBtn.addEventListener('click', () => {
+    if (isIOS() && !audioContext) {
+      // On iOS, clicking start before audio is enabled should create audio context
+      initAudio();
+      // The audio creation will be handled by the gesture event
+      console.log('iOS: Audio initialization triggered by start button');
+      return;
+    }
+
     if (state.isRunning) {
       stop();
     } else {
@@ -372,7 +458,11 @@ if (muteBtn) {
 // Update mobile button text based on state
 function updateMobileButtons() {
   if (startStopBtn) {
-    startStopBtn.textContent = state.isRunning ? 'STOP' : 'START';
+    if (isIOS() && !audioContext) {
+      startStopBtn.textContent = 'ENABLE AUDIO';
+    } else {
+      startStopBtn.textContent = state.isRunning ? 'STOP' : 'START';
+    }
   }
 }
 

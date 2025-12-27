@@ -233,6 +233,22 @@ body {
     border-color: #1e7e34;
 }
 
+/* SEO Content */
+.seo-content {
+    margin-top: 2rem;
+    text-align: center;
+    color: #cccccc;
+    font-size: 0.9rem;
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 0 1rem;
+}
+
+.seo-content p {
+    line-height: 1.5;
+}
+
 /* Responsive design */
 @media (max-width: 480px) {
     .metronome {
@@ -257,5 +273,10 @@ body {
 
     .mobile-btn-row {
         gap: 0.3rem;
+    }
+
+    .seo-content {
+        margin-top: 1.5rem;
+        font-size: 0.8rem;
     }
 }

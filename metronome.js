@@ -15,9 +15,6 @@ const state = {
 let audioContext = null;
 let audioInitialized = false;
 
-// Wake Lock for keeping screen on during metronome
-let wakeLock = null;
-
 // iOS audio unmute
 const USER_ACTIVATION_EVENTS = [
   'auxclick',
@@ -384,16 +381,6 @@ function startMetronome() {
     state.nextNoteTime = audioContext.currentTime + 0.05; // Start in 50ms
   }
 
-  // Request wake lock to keep screen on
-  if ('wakeLock' in navigator) {
-    navigator.wakeLock.request('screen').then(lock => {
-      wakeLock = lock;
-      console.log('Wake lock acquired');
-    }).catch(e => {
-      console.log('Wake lock not available:', e);
-    });
-  }
-
   // Start the timer loop
   state.intervalId = setInterval(timerLoop, state.lookahead);
 
@@ -403,13 +390,6 @@ function startMetronome() {
 // Stop metronome
 function stop() {
   state.isRunning = false;
-
-  // Release wake lock
-  if (wakeLock) {
-    wakeLock.release();
-    wakeLock = null;
-    console.log('Wake lock released');
-  }
 
   if (state.intervalId) {
     clearInterval(state.intervalId);

@@ -29,6 +29,9 @@ const USER_ACTIVATION_EVENTS = [
   'touchend'
 ]
 
+// Click sound data URL for iOS HTML5 Audio fallback
+const clickDataURL = 'data:audio/wav;base64,UklGRjQBAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQgAAAAAAAAAAAAAAAAAAP//PwAAAAAAAAAAAAAAAAAAAAAAAAAA';
+
 function unmuteIosAudio () {
   const AudioContext = window.webkitAudioContext
 
@@ -270,53 +273,64 @@ function onIOSAudioReady() {
 
 // Play a single click sound
 function playClick(time) {
-  // Check if audio is ready (initialized and not suspended)
-  if (!audioContext || !audioInitialized) {
-    console.log('Audio not ready - context:', !!audioContext, 'initialized:', audioInitialized);
-    return;
-  }
-
-  // If suspended, try to resume (skip this beat to avoid timing issues)
-  if (audioContext.state === 'suspended') {
-    console.log('Audio context suspended, attempting resume');
-    audioContext.resume().catch(e => console.error('Resume failed in playClick:', e));
-    return; // Skip this click, next will hopefully work
-  }
-
   // Skip if random muting is active
   if (state.randomMuteProbability > 0 && Math.random() < state.randomMuteProbability) {
     return;
   }
 
-  try {
-    const oscillator = audioContext.createOscillator();
-    const gainNode = audioContext.createGain();
+  if (isIOS()) {
+    // Use HTML5 Audio for iOS to bypass Web Audio issues
+    try {
+      const audio = new Audio(clickDataURL);
+      audio.volume = 0.3; // Adjust volume
+      audio.play().catch(e => console.error('HTML Audio play failed:', e));
+      console.log('HTML Audio click played on iOS');
+    } catch (error) {
+      console.error('Error creating HTML Audio:', error);
+    }
+  } else {
+    // Use Web Audio for non-iOS devices
+    // Check if audio is ready (initialized and not suspended)
+    if (!audioContext || !audioInitialized) {
+      console.log('Audio not ready - context:', !!audioContext, 'initialized:', audioInitialized);
+      return;
+    }
 
-    oscillator.connect(gainNode);
-    gainNode.connect(audioContext.destination);
+    // If suspended, try to resume (skip this beat to avoid timing issues)
+    if (audioContext.state === 'suspended') {
+      console.log('Audio context suspended, attempting resume');
+      audioContext.resume().catch(e => console.error('Resume failed in playClick:', e));
+      return; // Skip this click, next will hopefully work
+    }
 
-    // iOS-friendly click sound: lower frequency, sine wave for better compatibility
-    const frequency = isIOS() ? 800 : 1000; // Lower frequency for iOS
-    const waveType = isIOS() ? 'sine' : 'square'; // Sine wave works better on iOS
+    try {
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
 
-    oscillator.frequency.setValueAtTime(frequency, time);
-    oscillator.type = waveType;
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
 
-    // Quick envelope for click sound - slightly longer for iOS
-    const attackTime = isIOS() ? 0.005 : 0.001;
-    const decayTime = isIOS() ? 0.08 : 0.05;
-    const gainLevel = isIOS() ? 0.2 : 0.3; // Lower gain for iOS
+      const frequency = 1000;
+      const waveType = 'square';
 
-    gainNode.gain.setValueAtTime(0, time);
-    gainNode.gain.linearRampToValueAtTime(gainLevel, time + attackTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.001, time + decayTime);
+      oscillator.frequency.setValueAtTime(frequency, time);
+      oscillator.type = waveType;
 
-    oscillator.start(time);
-    oscillator.stop(time + decayTime);
+      const attackTime = 0.001;
+      const decayTime = 0.05;
+      const gainLevel = 0.3;
 
-    console.log('Click played at time:', time, 'frequency:', frequency);
-  } catch (error) {
-    console.error('Error playing audio:', error);
+      gainNode.gain.setValueAtTime(0, time);
+      gainNode.gain.linearRampToValueAtTime(gainLevel, time + attackTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.001, time + decayTime);
+
+      oscillator.start(time);
+      oscillator.stop(time + decayTime);
+
+      console.log('Web Audio click played at time:', time, 'frequency:', frequency);
+    } catch (error) {
+      console.error('Error playing Web Audio:', error);
+    }
   }
 }
 

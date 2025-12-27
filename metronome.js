@@ -25,6 +25,7 @@ const USER_ACTIVATION_EVENTS = [
   'keyup',
   'mousedown',
   'mouseup',
+  'touchstart',
   'touchend'
 ]
 
@@ -139,6 +140,9 @@ function unmuteIosAudio () {
   }
 }
 
+// Initialize unmute early
+unmuteIosAudio();
+
 // DOM Elements
 const bpmEl = typeof document !== 'undefined' ? document.getElementById("tempo-display") : null;
 const statusEl = typeof document !== 'undefined' ? document.getElementById("status-display") : null;
@@ -161,10 +165,17 @@ function initAudio() {
        setupIOSAudioCreation();
        unmuteIosAudio(); // Enable WebAudio on iOS
      } else {
-      // For non-iOS devices, create immediately
-      audioContext = new (window.AudioContext || window.webkitAudioContext)();
-      audioInitialized = true;
-      console.log('Audio context initialized for non-iOS device, state:', audioContext.state);
+       // For non-iOS devices, create immediately
+       audioContext = new (window.AudioContext || window.webkitAudioContext)();
+       audioInitialized = true;
+       console.log('Audio context initialized for non-iOS device, state:', audioContext.state);
+
+       // Add state change listener for auto-resume
+       audioContext.onstatechange = () => {
+         if (audioContext.state === 'suspended') {
+           audioContext.resume().catch(e => console.error('Resume failed:', e));
+         }
+       };
     }
   } catch (e) {
     console.error('Web Audio API not supported:', e);
@@ -239,6 +250,15 @@ function onIOSAudioReady() {
   audioInitialized = true;
   console.log('iOS audio fully ready');
 
+  // Add state change listener for auto-resume
+  if (audioContext) {
+    audioContext.onstatechange = () => {
+      if (audioContext.state === 'suspended') {
+        audioContext.resume().catch(e => console.error('Resume failed:', e));
+      }
+    };
+  }
+
   // If metronome was supposed to be running but couldn't start due to audio, start it now
   if (state.isRunning && !state.intervalId) {
     console.log('Starting metronome that was waiting for iOS audio');
@@ -251,9 +271,16 @@ function onIOSAudioReady() {
 // Play a single click sound
 function playClick(time) {
   // Check if audio is ready (initialized and not suspended)
-  if (!audioContext || !audioInitialized || audioContext.state !== 'running') {
-    console.log('Audio not ready - context:', !!audioContext, 'initialized:', audioInitialized, 'state:', audioContext?.state);
+  if (!audioContext || !audioInitialized) {
+    console.log('Audio not ready - context:', !!audioContext, 'initialized:', audioInitialized);
     return;
+  }
+
+  // If suspended, try to resume (skip this beat to avoid timing issues)
+  if (audioContext.state === 'suspended') {
+    console.log('Audio context suspended, attempting resume');
+    audioContext.resume().catch(e => console.error('Resume failed in playClick:', e));
+    return; // Skip this click, next will hopefully work
   }
 
   // Skip if random muting is active
@@ -448,6 +475,11 @@ function updateUI() {
 
 // Keyboard event handler
 document.addEventListener("keydown", (e) => {
+  // Resume audio context on iOS for any key press
+  if (isIOS() && audioContext) {
+    audioContext.resume().catch(e => console.error('Resume failed on keydown:', e));
+  }
+
   // Handle random input field first
   if (randomInput.style.display !== 'none') {
     if (e.code === 'Enter') {
@@ -530,6 +562,11 @@ const muteBtn = typeof document !== 'undefined' ? document.getElementById('mute-
 // Add mobile button event listeners
 if (startStopBtn) {
   startStopBtn.addEventListener('click', () => {
+    // Resume audio context on iOS
+    if (isIOS() && audioContext) {
+      audioContext.resume().catch(e => console.error('Resume failed on start button:', e));
+    }
+
     if (isIOS() && !audioContext) {
       // On iOS, clicking start before audio is enabled should create audio context
       initAudio();
@@ -548,6 +585,11 @@ if (startStopBtn) {
 
 if (halfBtn) {
   halfBtn.addEventListener('click', () => {
+    // Resume audio context on iOS
+    if (isIOS() && audioContext) {
+      audioContext.resume().catch(e => console.error('Resume failed on half button:', e));
+    }
+
     if (state.isRunning) {
       state.bpm = Math.max(1, Math.round(state.bpm / 2));
       updateUI();
@@ -557,6 +599,11 @@ if (halfBtn) {
 
 if (tapBtn) {
   tapBtn.addEventListener('click', () => {
+    // Resume audio context on iOS
+    if (isIOS() && audioContext) {
+      audioContext.resume().catch(e => console.error('Resume failed on tap button:', e));
+    }
+
     if (state.isRunning) {
       handleTapTempo();
     }
@@ -565,6 +612,11 @@ if (tapBtn) {
 
 if (doubleBtn) {
   doubleBtn.addEventListener('click', () => {
+    // Resume audio context on iOS
+    if (isIOS() && audioContext) {
+      audioContext.resume().catch(e => console.error('Resume failed on double button:', e));
+    }
+
     if (state.isRunning) {
       state.bpm = Math.min(300, Math.round(state.bpm * 2));
       updateUI();
@@ -574,6 +626,11 @@ if (doubleBtn) {
 
 if (muteBtn) {
   muteBtn.addEventListener('click', () => {
+    // Resume audio context on iOS
+    if (isIOS() && audioContext) {
+      audioContext.resume().catch(e => console.error('Resume failed on mute button:', e));
+    }
+
     if (state.isRunning) {
       handleRandomMuting();
     }

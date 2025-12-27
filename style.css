@@ -233,19 +233,19 @@ body {
     border-color: #1e7e34;
 }
 
-/* SEO Content */
+/* SEO Content - Hidden from users but visible to search engines */
 .seo-content {
-    margin-top: 2rem;
-    text-align: center;
-    color: #cccccc;
-    font-size: 0.9rem;
-    max-width: 400px;
-    margin-left: auto;
-    margin-right: auto;
-    padding: 0 1rem;
+    position: absolute;
+    left: -10000px;
+    top: -10000px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
 }
 
 .seo-content p {
+    font-size: 0.9rem;
+    color: #cccccc;
     line-height: 1.5;
 }
 

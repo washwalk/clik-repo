@@ -15,6 +15,9 @@ const state = {
 let audioContext = null;
 let audioInitialized = false;
 
+// iOS audio unmute
+const unmuteAudio = require('unmute-ios-audio');
+
 // DOM Elements
 const bpmEl = typeof document !== 'undefined' ? document.getElementById("tempo-display") : null;
 const statusEl = typeof document !== 'undefined' ? document.getElementById("status-display") : null;
@@ -31,11 +34,12 @@ function isIOS() {
 // Initialize Audio Context (called on page load)
 function initAudio() {
   try {
-    // For iOS, we'll create the audio context inside user gesture events
-    if (isIOS()) {
-      console.log('iOS detected - setting up audio context creation on user gesture');
-      setupIOSAudioCreation();
-    } else {
+  // For iOS, we'll create the audio context inside user gesture events
+     if (isIOS()) {
+       console.log('iOS detected - setting up audio context creation on user gesture');
+       setupIOSAudioCreation();
+       unmuteAudio(); // Enable WebAudio on iOS
+     } else {
       // For non-iOS devices, create immediately
       audioContext = new (window.AudioContext || window.webkitAudioContext)();
       audioInitialized = true;
